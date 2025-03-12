@@ -34,63 +34,71 @@ namespace CorallyOS.OSSystem
 
                 FileTree.AddFile("system/hello.txt", "Hello, world!");
                 FileTree.AddFile("system/startup_scripts.txt", "system/scripts/test1.lua\nsystem/scripts/test2.lua");
-            }
 
-
-
-            ThreadRunner.AddThread(new LuaScriptThread("TestThread", false, @"
-                function on_thread_create(name)
-                    if name == ThreadName then
-                        CorallySystem:RegisterLibrary({
-                            test = function()
-                                print('I was defined in TestThread!')
-                            end,
-                            ID = 'TestLib'
-                        })
-                        CorallySystem:SetMetadata(name, 'initialized', 'true')
-                    end
-                end
-
-                function on_thread_suspend(name)
-                
-                end
-
-                function on_thread_resume(name)
-                
-                end
-
-                function on_thread_tick(name)
-
-                end
-            "));
-
-            ThreadRunner.AddThread(new LuaScriptThread("TestThread2", false, @"
-                function on_thread_create(name)
-                    if name == ThreadName then
-                        CorallySystem:SetMetadata(name, 'initialized', 'true')
-                    end
-                end
-
-                function on_thread_suspend(name)
-                
-                end
-
-                function on_thread_resume(name)
-                
-                end
-
-                function on_thread_tick(name)
-                    local initialized = CorallySystem:GetMetadata(name, 'initialized')
-                    local TestLib = CorallySystem:GetLibrary('TestLib') -- If the lib was got in the on create function, if TestLib should update, it should be updated here too
-                    if initialized == 'true' and name == ThreadName then
-                        if TestLib then
-                            TestLib.test()
-                        else
-                            print('TestLib was not found!')
+                FileTree.AddFile("system/scripts/test1.lua", @"
+                    function on_thread_create(name)
+                        if name == ThreadName then
+                            CorallySystem:RegisterLibrary({
+                                test = function()
+                                    print('I was defined in TestThread!')
+                                end,
+                                ID = 'TestLib'
+                            })
+                            CorallySystem:SetMetadata(name, 'initialized', 'true')
                         end
                     end
-                end
-            "));
+
+                    function on_thread_suspend(name)
+                
+                    end
+
+                    function on_thread_resume(name)
+                
+                    end
+
+                    function on_thread_tick(name)
+
+                    end
+                ");
+                FileTree.AddFile("system/scripts/test2.lua", @"
+                    function on_thread_create(name)
+                        if name == ThreadName then
+                            CorallySystem:SetMetadata(name, 'initialized', 'true')
+                        end
+                    end
+
+                    function on_thread_suspend(name)
+                
+                    end
+
+                    function on_thread_resume(name)
+                
+                    end
+
+                    function on_thread_tick(name)
+                        local initialized = CorallySystem:GetMetadata(name, 'initialized')
+                        local TestLib = CorallySystem:GetLibrary('TestLib') -- If the lib was got in the on create function, if TestLib should update, it should be updated here too
+                        if initialized == 'true' and name == ThreadName then
+                            if TestLib then
+                                TestLib.test()
+                            else
+                                print('TestLib was not found!')
+                            end
+                        end
+                    end
+                ");
+            }
+
+            var startupScripts = FileTree.GetFile("system/startup_scripts.txt");
+            List<string> scripts = new List<string>();
+            if (startupScripts != null)
+            {
+                scripts = startupScripts.Data.Split('\n').ToList();
+            }
+
+            foreach (var script in scripts) {
+                ThreadRunner.AddThread(new LuaScriptThread(FileTree.GetFileNameWithoutExtension(script), false, FileTree.GetFile(script).Data));
+            }
 
             ThreadRunner.InitializeThreads();
 

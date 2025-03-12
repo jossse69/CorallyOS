@@ -69,7 +69,7 @@ namespace CorallyOS.OSSystem.Files
 
         public string GetFileNameWithoutExtension(string path)
         {
-            string[] pathParts = path.Split('.');
+            string[] pathParts = GetFileName(path).Split('.');
             return pathParts[0];
         }
 
